@@ -2,29 +2,47 @@ const express = require('express');
 const path = require('path'); 
 const app = express();
 
-// Render automatically assigns a port via process.env.PORT. Falls back to 8080 locally.
 const PORT = process.env.PORT || 8080; 
 
 app.use(express.json());
 
-// Serve all static assets (CSS, client-side JS, images) from your root folder
-app.use(express.static(path.join(__dirname, '.')));
+const rootDir = process.cwd();
+app.use(express.static(rootDir));
 
-// 1. CUSTOMER ROUTE: When someone visits the main link (or /customer)
+// Smart function to try multiple filenames in case of server caching bugs
+function sendHtmlFile(res, fileName) {
+    // Try Option 1: Exact lowercase (e.g., customer.html)
+    res.sendFile(path.join(rootDir, fileName.toLowerCase()), (err) => {
+        if (err) {
+            // Try Option 2: First letter capitalized (e.g., Kitchen.html)
+            const capitalized = fileName.charAt(0).toUpperCase() + fileName.slice(1);
+            res.sendFile(path.join(rootDir, capitalized), (err2) => {
+                if (err2) {
+                    // Try Option 3: Fallback for the previous 'ustomer.html' typo
+                    res.sendFile(path.join(rootDir, 'ustomer.html'), (err3) => {
+                        if (err3) {
+                            res.status(404).send("Error: The server cannot find your HTML file in the repository layout.");
+                        }
+                    });
+                }
+            });
+        }
+    });
+}
+
+// Map the routes to the smart file checker
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'customer.html'));
+    sendHtmlFile(res, 'customer.html');
 });
 
 app.get('/customer', (req, res) => {
-    res.sendFile(path.join(__dirname, 'customer.html'));
+    sendHtmlFile(res, 'customer.html');
 });
 
-// 2. KITCHEN ROUTE: When the kitchen staff visits /kitchen
 app.get('/kitchen', (req, res) => {
-    res.sendFile(path.join(__dirname, 'kitchen.html'));
+    sendHtmlFile(res, 'kitchen.html');
 });
 
-// Start the server
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

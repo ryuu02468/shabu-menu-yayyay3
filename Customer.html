@@ -28,6 +28,7 @@
 
         /* Main Menu Layout */
         .info-bar { background-color: var(--secondary-color); color: white; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .change-table-btn { background: transparent; border: 1px solid white; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
         .main-layout { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1.5rem; }
         @media (max-width: 1024px) { .main-layout { grid-template-columns: 1.5fr 1fr; } .notification-panel { grid-column: span 2; } }
         @media (max-width: 768px) { .main-layout { grid-template-columns: 1fr; } .notification-panel { grid-column: span 1; } }
@@ -63,6 +64,12 @@
         .console-log.warning { color: #f4a261; font-weight: bold; }
         .console-log.danger { color: #f25c54; }
 
+        .log-actions { display: inline-flex; gap: 5px; margin-left: 8px; }
+        .edit-order-btn { background-color: var(--warning-color); color: #111; border: none; padding: 2px 6px; font-size: 0.75rem; font-weight: bold; border-radius: 3px; cursor: pointer; }
+        .cancel-order-btn { background-color: var(--danger-color); color: white; border: none; padding: 2px 6px; font-size: 0.75rem; font-weight: bold; border-radius: 3px; cursor: pointer; }
+        .edit-order-btn:hover { background-color: #e76f51; color: white; }
+        .cancel-order-btn:hover { background-color: #b3001b; }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -74,18 +81,16 @@
     </header>
 
     <div class="container">
-        <!-- Table Selection Screen -->
         <div id="table-screen">
             <h2>Welcome! Please Select Your Table</h2>
             <p style="color: #666; margin-top: 5px;">Choose your table number to start ordering</p>
             <div class="table-grid" id="table-grid"></div>
         </div>
 
-        <!-- Main Menu Screen -->
         <div id="menu-screen" style="display: none;">
             <div class="info-bar">
                 <div>📍 <span id="current-table-display" style="font-weight: bold;"></span></div>
-                <div style="font-size: 0.85rem; color: #ccc;">Table Locked Securely</div>
+                <button class="change-table-btn" onclick="resetTable()">Change Table</button>
             </div>
 
             <div class="main-layout">
@@ -114,8 +119,9 @@
 
                 <div class="notification-panel">
                     <h3>📋 Order Status Feed</h3>
-                    <div class="console-box" id="console-box">
-                        <div class="console-placeholder">System waiting for your first order...</div>
+                    <p style="font-size: 0.85rem; color: #666; margin-top: 4px;">Live updates from the kitchen tab</p>
+                    <div class="console-box" id="customer-console">
+                        <div class="console-placeholder">System active. Awaiting your first order log...</div>
                     </div>
                 </div>
             </div>
@@ -123,53 +129,245 @@
     </div>
 
     <script>
-        // Mock menu data items
-        const menuItems = {
-            soups: [{id: 's1', name: 'Mala Soup (ซุปหม่าล่า)', price: 0}, {id: 's2', name: 'Shabu Black Soup (ซุปน้ำดำ)', price: 0}],
-            meats: [{id: 'm1', name: 'Wagyu Beef (เนื้อวากิว)', price: 0}, {id: 'm2', name: 'Kurobuta Pork (หมูคุโรบุตะ)', price: 0}, {id: 'm3', name: 'Fresh Shrimp (กุ้งสด)', price: 0}],
-            vegs: [{id: 'v1', name: 'Chinese Cabbage (ผักกาดขาว)', price: 0}, {id: 'v2', name: 'Eringi Mushroom (เห็ดออรินจิ)', price: 0}]
+        let selectedTable = null;
+        let cart = {};
+        const itemLookupByName = {};
+
+        const menuData = {
+            soup: [
+                { id: 's1', name: 'Mala Soup (น้ำซุปหมาล่า)', price: 50, allergens: ['Soy', 'Gluten', 'Sesame'] },
+                { id: 's2', name: 'Sukiyaki Black Soup (น้ำซุปดำ)', price: 0, allergens: ['Soy', 'Gluten'] },
+                { id: 's3', name: 'Tom Yum Soup (น้ำซุปต้มยำ)', price: 40, allergens: ['Seafood', 'Dairy'] }
+            ],
+            meat: [
+                { id: 'm1', name: 'Wagyu Beef (เนื้อวากิว)', price: 120, allergens: [] },
+                { id: 'm2', name: 'Sliced Pork Belly (หมูสามชั้นสไลด์)', price: 60, allergens: [] },
+                { id: 'm3', name: 'Pork Shoulder (สันคอหมู)', price: 60, allergens: [] },
+                { id: 'm4', name: 'Fresh Shrimp (กุ้งสด)', price: 80, allergens: ['Crustaceans'] },
+                { id: 'm5', name: 'Marinated Minced Pork (หมูนุ่ม)', price: 50, allergens: ['Soy', 'Sesame', 'Egg'] }
+            ],
+            veg: [
+                { id: 'v1', name: 'Chinese Cabbage (ผักกาดขาว)', price: 20, allergens: [] },
+                { id: 'v2', name: 'Eryngii Mushroom (เห็ดออรินจิ)', price: 25, allergens: [] },
+                { id: 'v3', name: 'Cheese Tofu (เต้าหู้ชีส)', price: 40, allergens: ['Dairy', 'Soy', 'Fish'] },
+                { id: 'v4', name: 'Instant Noodles (มาม่า)', price: 15, allergens: ['Gluten'] }
+            ]
         };
 
-        let cart = {};
-
-        // Run security checks immediately on DOM Load
-        document.addEventListener("DOMContentLoaded", () => {
-            renderTableGrid();
-            checkTableLock();
-            loadMenu();
+        // Create quick reverse lookup mapping dictionary
+        [...menuData.soup, ...menuData.meat, ...menuData.veg].forEach(item => {
+            itemLookupByName[item.name] = { id: item.id, price: item.price };
         });
 
-        // 1. Check if table choice is already locked in local storage
-        function checkTableLock() {
-            const savedTable = localStorage.getItem("shabu_table_locked");
-            if (savedTable) {
-                document.getElementById("table-screen").style.display = "none";
-                document.getElementById("menu-screen").style.display = "block";
-                document.getElementById("current-table-display").innerText = `Table ${savedTable}`;
+        // Initialize Table Select UI Layout
+        const tableGrid = document.getElementById('table-grid');
+        for (let i = 1; i <= 10; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'table-btn';
+            btn.innerText = `Table ${i}`;
+            btn.onclick = () => selectTable(i);
+            tableGrid.appendChild(btn);
+        }
+
+        function selectTable(tableNum) {
+            selectedTable = tableNum;
+            document.getElementById('current-table-display').innerText = `Table Number: ${tableNum}`;
+            document.getElementById('table-screen').style.display = 'none';
+            document.getElementById('menu-screen').style.display = 'block';
+            setupCategory('soup-menu', menuData.soup);
+            setupCategory('meat-menu', menuData.meat);
+            setupCategory('veg-menu', menuData.veg);
+            updateCartUI();
+            updateConsoleUI();
+        }
+
+        function resetTable() {
+            if(confirm("Switch your active table screen configuration?")) {
+                document.getElementById('table-screen').style.display = 'block';
+                document.getElementById('menu-screen').style.display = 'none';
             }
         }
 
-        // Generate the restaurant grid options (10 tables)
-        function renderTableGrid() {
-            const grid = document.getElementById("table-grid");
-            grid.innerHTML = "";
-            for (let i = 1; i <= 10; i++) {
-                const btn = document.createElement("button");
-                btn.className = "table-btn";
-                btn.innerText = i;
-                btn.onclick = () => selectAndLockTable(i);
-                grid.appendChild(btn);
+        function setupCategory(elementId, items) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            items.forEach(item => {
+                let allergenHTML = (item.allergens || []).map(a => `<span class="allergen-badge">⚠️ ${a}</span>`).join('');
+                const div = document.createElement('div');
+                div.className = 'menu-item';
+                div.innerHTML = `
+                    <div>
+                        <h4>${item.name}</h4>
+                        <p class="price">${item.price === 0 ? 'Free' : item.price + ' THB'}</p>
+                        <div class="allergen-box">${allergenHTML}</div>
+                    </div>
+                    <button class="add-btn" onclick="addToCart('${item.id}', '${item.name}', ${item.price})">Add to Order</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addToCart(id, name, price) {
+            if (cart[id]) cart[id].qty += 1;
+            else cart[id] = { name, price, qty: 1 };
+            updateCartUI();
+        }
+
+        function changeQty(id, delta) {
+            if (!cart[id]) return;
+            cart[id].qty += delta;
+            if (cart[id].qty <= 0) delete cart[id];
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const container = document.getElementById('cart-items');
+            container.innerHTML = '';
+            let total = 0, count = 0;
+
+            Object.keys(cart).forEach(id => {
+                const item = cart[id];
+                total += item.price * item.qty;
+                count += item.qty;
+                const div = document.createElement('div');
+                div.className = 'cart-item';
+                div.innerHTML = `
+                    <div>
+                        <div><strong>${item.name}</strong></div>
+                        <div style="font-size: 0.85rem; color: #666;">${item.price} THB x ${item.qty}</div>
+                    </div>
+                    <div class="cart-controls"><button onclick="changeQty('${id}', -1)">-</button><span>${item.qty}</span><button onclick="changeQty('${id}', 1)">+</button></div>
+                `;
+                container.appendChild(div);
+            });
+            document.getElementById('cart-total').innerText = `${total} THB`;
+            document.getElementById('submit-order-btn').disabled = (count === 0);
+        }
+
+        // Helper storage fetch routines
+        function getKitchenOrders() { return JSON.parse(localStorage.getItem('kitchenOrders')) || []; }
+        function saveKitchenOrders(arr) { localStorage.setItem('kitchenOrders', JSON.stringify(arr)); }
+        function getLogs() { return JSON.parse(localStorage.getItem('notificationLogs')) || []; }
+        function saveLogs(arr) { localStorage.setItem('notificationLogs', JSON.stringify(arr)); }
+
+        function sendOrder() {
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            let counter = parseInt(localStorage.getItem('orderIdCounter')) || 101;
+            const currentOrderId = counter++;
+            localStorage.setItem('orderIdCounter', counter);
+
+            const orderItems = Object.keys(cart).map(id => ({ name: cart[id].name, qty: cart[id].qty }));
+            const newOrder = { orderId: currentOrderId, table: selectedTable, time: timeStr, items: orderItems };
+
+            let orders = getKitchenOrders();
+            orders.push(newOrder);
+            saveKitchenOrders(orders);
+            
+            pushLog(selectedTable, `📡 Order #${currentOrderId} sent successfully to kitchen.`, 'info', timeStr, currentOrderId, true);
+
+            cart = {};
+            updateCartUI();
+            updateConsoleUI();
+            alert(`🎉 Success! Order #${currentOrderId} pushed to kitchen processing queue.`);
+        }
+
+        function pushLog(tableNum, text, type, time, orderId, actionable) {
+            let logs = getLogs();
+            logs.unshift({ table: tableNum, text, type, time, orderId, actionable });
+            saveLogs(logs);
+        }
+
+        function updateConsoleUI() {
+            const consoleBox = document.getElementById('customer-console');
+            const filtering = getLogs().filter(log => log.table === selectedTable);
+
+            if (filtering.length === 0) {
+                consoleBox.innerHTML = '<div class="console-placeholder">System active. Awaiting your first order log...</div>';
+                return;
             }
+
+            consoleBox.innerHTML = '';
+            filtering.forEach(log => {
+                const div = document.createElement('div');
+                div.className = `console-log ${log.type}`;
+                let actionHTML = log.actionable ? `
+                    <div class="log-actions">
+                        <button class="edit-order-btn" onclick="editActiveOrder(${log.orderId})">✏️ Edit</button>
+                        <button class="cancel-order-btn" onclick="cancelActiveOrder(${log.orderId})">❌ Cancel</button>
+                    </div>` : '';
+                div.innerHTML = `<span class="time">[${log.time}]</span> ${log.text}${actionHTML}`;
+                consoleBox.appendChild(div);
+            });
         }
 
-        // 2. Lock the user selection into the browser memory permanently
-        function selectAndLockTable(tableNum) {
-            localStorage.setItem("shabu_table_locked", tableNum);
-            checkTableLock();
+        function editActiveOrder(orderId) {
+            let orders = getKitchenOrders();
+            const idx = orders.findIndex(o => o.orderId === orderId);
+            
+            if (idx === -1) {
+                alert("⚠️ Cannot edit this order: The kitchen is already preparing it!");
+                disableLogAction(orderId);
+                return;
+            }
+
+            if (Object.keys(cart).length > 0 && !confirm("⚠️ Overwrite items currently sitting in your cart?")) return;
+
+            orders[idx].items.forEach(item => {
+                const schema = itemLookupByName[item.name];
+                if (schema) cart[schema.id] = { name: item.name, price: schema.price, qty: item.qty };
+            });
+
+            orders.splice(idx, 1);
+            saveKitchenOrders(orders);
+
+            let logs = getLogs();
+            let targetLog = logs.find(l => l.orderId === orderId);
+            if (targetLog) { targetLog.text = `✏️ Order #${orderId} was recalled and is being modified.`; targetLog.type = 'warning'; targetLog.actionable = false; }
+            saveLogs(logs);
+
+            updateCartUI();
+            updateConsoleUI();
+            alert(`📥 Order #${orderId} loaded back into your cart.`);
         }
 
-        function loadMenu() {
-            renderCategory('soup-menu', menuItems.soups);
-            renderCategory('meat-menu', menuItems.meats);
-            renderCategory('veg-menu', menuItems.vegs);
-        }function renderCategory(elementId, items) {const container = document.getElementById(elementId);container.innerHTML = items.map(item => <div class="menu-item"> <h4>${item.name}</h4> <p class="price">${item.price} THB</p> <button class="add-btn" onclick="addToCart('${item.id}', '${item.name}')">Add to Order</button> </div>).join('');}function addToCart(id, name) {if (cart[id]) {cart[id].qty++;} else {cart[id] = { name: name, qty: 1 };}updateCartUI();}function changeQty(id, amount) {if (!cart[id]) return;cart[id].qty += amount;if (cart[id].qty <= 0) {delete cart[id];}updateCartUI();}function updateCartUI() {const container = document.getElementById("cart-items");const btn = document.getElementById("submit-order-btn");const keys = Object.keys(cart);if (keys.length === 0) {container.innerHTML = 'Your cart is empty';btn.disabled = true;return;}btn.disabled = false;container.innerHTML = keys.map(key => <div class="cart-item"> <span>${cart[key].name}</span> <div class="cart-controls"> <button onclick="changeQty('${key}', -1)">-</button> <span>${cart[key].qty}</span> <button onclick="changeQty('${key}', 1)">+</button> </div> </div>).join('');}function sendOrder() {const currentTable = localStorage.getItem("shabu_table_locked");if (!currentTable) {alert("Security Error: Table verification token missing!");window.location.reload();return;}const consoleBox = document.getElementById("console-box");const placeholder = consoleBox.querySelector(".console-placeholder");if (placeholder) placeholder.remove();const timeStamp = new Date().toLocaleTimeString();const log = document.createElement("div");log.className = "console-log success";log.innerHTML = <span class="time">[${timeStamp}]</span> Order sent from Table ${currentTable}! Kitchen is preparing your food.;consoleBox.appendChild(log);consoleBox.scrollTop = consoleBox.scrollHeight;// Reset cartcart = {};updateCartUI();}
+        function cancelActiveOrder(orderId) {
+            let orders = getKitchenOrders();
+            const idx = orders.findIndex(o => o.orderId === orderId);
+            
+            if (idx === -1) {
+                alert("⚠️ Cannot cancel: Kitchen is already working on this order.");
+                disableLogAction(orderId);
+                return;
+            }
+
+            if (!confirm(`❌ Completely cancel Order #${orderId}?`)) return;
+
+            orders.splice(idx, 1);
+            saveKitchenOrders(orders);
+
+            let logs = getLogs();
+            let targetLog = logs.find(l => l.orderId === orderId);
+            if (targetLog) { targetLog.text = `🛑 Order #${orderId} has been cancelled by the customer.`; targetLog.type = 'danger'; targetLog.actionable = false; }
+            saveLogs(logs);
+
+            updateConsoleUI();
+            alert(`🛑 Order #${orderId} successfully cancelled.`);
+        }
+
+        function disableLogAction(orderId) {
+            let logs = getLogs();
+            let targetLog = logs.find(l => l.orderId === orderId);
+            if (targetLog) targetLog.actionable = false;
+            saveLogs(logs);
+            updateConsoleUI();
+        }
+
+        // Listen for storage changes coming back from the kitchen file window
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'notificationLogs' || e.key === 'kitchenOrders') {
+                updateConsoleUI();
+            }
+        });
+    </script>
+</body>
+</html>

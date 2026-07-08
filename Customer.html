@@ -6,45 +6,30 @@
     <title>ชาบู Shabu Delight - Customer Portal</title>
     <style>
         :root {
-            --primary-color: #e63946;
-            --secondary-color: #1d3557;
-            --danger-color: #d90429;
-            --bg-color: #f1faee;
-            --card-bg: #ffffff;
-            --text-color: #333;
+            --primary-color: #e63946; --secondary-color: #1d3557; --danger-color: #d90429;
+            --bg-color: #f1faee; --card-bg: #ffffff; --text-color: #333;
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-color); }
         header { background-color: var(--primary-color); color: white; text-align: center; padding: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .container { max-width: 1400px; margin: 2rem auto; padding: 0 1rem; }
-
-        /* Table Selection Screen */
         #table-screen { text-align: center; background: var(--card-bg); padding: 2rem; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); max-width: 600px; margin: 4rem auto; }
         .table-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin: 2rem 0; }
         @media (max-width: 500px) { .table-grid { grid-template-columns: repeat(3, 1fr); } }
         .table-btn { background-color: white; border: 2px solid var(--secondary-color); color: var(--secondary-color); padding: 15px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; }
         .table-btn:hover { background-color: var(--secondary-color); color: white; }
-
-        /* Main Menu Layout */
         .info-bar { background-color: var(--secondary-color); color: white; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
         .change-table-btn { background: transparent; border: 1px solid white; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
         .main-layout { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1.5rem; }
         @media (max-width: 1024px) { .main-layout { grid-template-columns: 1.5fr 1fr; } .notification-panel { grid-column: span 2; } }
         @media (max-width: 768px) { .main-layout { grid-template-columns: 1fr; } .notification-panel { grid-column: span 1; } }
-
         .category-title { margin: 1.5rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid var(--primary-color); color: var(--primary-color); }
         .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.2rem; }
         .menu-item { background: var(--card-bg); border-radius: 8px; padding: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
         .menu-item h4 { margin-bottom: 0.4rem; }
         .menu-item .price { color: var(--primary-color); font-weight: bold; margin-bottom: 0.8rem; }
-
-        .allergen-box { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 1rem; min-height: 20px; }
-        .allergen-badge { background-color: #fff3cd; color: #856404; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; border: 1px solid #ffeeba; }
         .add-btn { background-color: var(--primary-color); color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
         .add-btn:hover { background-color: #c92a36; }
-
-        /* Panels */
         .cart-panel, .notification-panel { background: var(--card-bg); padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); height: fit-content; position: sticky; top: 20px; }
         .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #ddd; }
         .cart-controls { display: flex; align-items: center; gap: 8px; }
@@ -53,17 +38,11 @@
         .order-btn { background-color: #2a9d8f; color: white; border: none; width: 100%; padding: 12px; margin-top: 1rem; border-radius: 5px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
         .order-btn:hover { background-color: #21867a; }
         .order-btn:disabled { background-color: #ccc; cursor: not-allowed; }
-
-        /* Notification Console */
-        .console-box { background-color: #1e1e1e; color: #f1f1f1; border-radius: 6px; padding: 10px; margin-top: 1rem; max-height: 450px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; }
+        .console-box { background-color: #1e1e1e; color: #f1f1f1; border-radius: 6px; padding: 10px; margin-top: 1rem; max-height: 450px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; }
         .console-placeholder { color: #777; text-align: center; padding: 1rem; font-style: italic; }
-        .console-log { padding: 8px 4px; border-bottom: 1px solid #333; line-height: 1.3rem; animation: fadeIn 0.3s ease-in; }
+        .console-log { padding: 8px 4px; border-bottom: 1px solid #333; animation: fadeIn 0.3s ease-in; }
         .console-log .time { color: #888; margin-right: 5px; }
-        .console-log.info { color: #4cc9f0; }
         .console-log.success { color: #4ade80; font-weight: bold; }
-        .console-log.warning { color: #f4a261; font-weight: bold; }
-        .console-log.danger { color: #f25c54; }
-
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -72,79 +51,57 @@
         <h1>ชาบู Shabu Delight</h1>
         <p>Premium Buffet & Customer Ordering Portal</p>
     </header>
-
     <div class="container">
-        <!-- Table Selection Screen -->
         <div id="table-screen">
             <h2>Welcome! Please Select Your Table</h2>
-            <p style="color: #666; margin-top: 5px;">Choose your table number to start ordering</p>
             <div class="table-grid" id="table-grid"></div>
         </div>
-
-        <!-- Main Menu Screen -->
         <div id="menu-screen" style="display: none;">
             <div class="info-bar">
                 <div>📍 <span id="current-table-display" style="font-weight: bold;"></span></div>
                 <button class="change-table-btn" onclick="resetTable()">Change Table</button>
             </div>
-
             <div class="main-layout">
                 <div class="menu-container">
                     <h3 class="category-title">🍲 Soup Bases (เลือกน้ำซุป)</h3>
                     <div class="menu-grid" id="soup-menu"></div>
-
                     <h3 class="category-title">🥩 Meats & Seafood (เนื้อสัตว์และทะเล)</h3>
                     <div class="menu-grid" id="meat-menu"></div>
-
                     <h3 class="category-title">🥬 Vegetables & Sides (ผักและเครื่องเคียง)</h3>
                     <div class="menu-grid" id="veg-menu"></div>
                 </div>
-
                 <div class="cart-panel">
                     <h3>Your Cart</h3>
-                    <div id="cart-items" style="margin-top: 1rem;">
-                        <p style="color: #888; text-align: center;">Your cart is empty</p>
-                    </div>
-                    <div class="total-section">
-                        <span>Total:</span>
-                        <span id="cart-total">0 THB</span>
-                    </div>
+                    <div id="cart-items" style="margin-top: 1rem;"><p style="color: #888; text-align: center;">Your cart is empty</p></div>
+                    <div class="total-section"><span>Total:</span><span id="cart-total">0 THB</span></div>
                     <button class="order-btn" id="submit-order-btn" disabled onclick="sendOrder()">Send Order to Kitchen</button>
                 </div>
-
                 <div class="notification-panel">
                     <h3>📋 Order Status Feed</h3>
-                    <div class="console-box" id="console-box">
-                        <div class="console-placeholder">System waiting for your first order...</div>
-                    </div>
+                    <div class="console-box" id="console-box"><div class="console-placeholder">System waiting for order...</div></div>
                 </div>
             </div>
         </div>
     </div>
     <script>
         const menuItems = {
-            soups: [{id: 's1', name: 'Mala Soup (ซุปหม่าล่า)', price: 0}, {id: 's2', name: 'Shabu Black Soup (ซุปน้ำดำ)', price: 0}],
-            meats: [{id: 'm1', name: 'Wagyu Beef (เนื้อวากิว)', price: 129}, {id: 'm2', name: 'Kurobuta Pork (หมูคุโรบุตะ)', price: 49}, {id: 'm3', name: 'Fresh Shrimp (กุ้งสด)', price: 99}],
+            soups: [{id: 's1', name: 'Mala Soup (ซุปหม่าล่า)', price: 49}, {id: 's2', name: 'Shabu Black Soup (ซุปน้ำดำ)', price: 0}],
+            meats: [{id: 'm1', name: 'Wagyu Beef (เนื้อวากิว)', price: 129}, {id: 'm2', name: 'Kurobuta Pork (หมูคุโรบุตะ)', price: 89}, {id: 'm3', name: 'Fresh Shrimp (กุ้งสด)', price: 99}],
             vegs: [{id: 'v1', name: 'Chinese Cabbage (ผักกาดขาว)', price: 29}, {id: 'v2', name: 'Eringi Mushroom (เห็ดออรินจิ)', price: 39}]
         };
-
         let cart = {};
 
         document.addEventListener("DOMContentLoaded", () => {
-            renderTableGrid();
-            checkTableLock();
-            loadMenu();
+            renderTableGrid(); checkTableLock(); loadMenu();
         });
 
         function checkTableLock() {
             const urlParams = new URLSearchParams(window.location.search);
             const urlTable = urlParams.get('table');
-
             if (urlTable) {
                 sessionStorage.setItem("shabu_table_locked", urlTable);
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
-
             const savedTable = sessionStorage.getItem("shabu_table_locked");
             if (savedTable) {
                 document.getElementById("table-screen").style.display = "none";
@@ -161,24 +118,13 @@
             grid.innerHTML = "";
             for (let i = 1; i <= 10; i++) {
                 const btn = document.createElement("button");
-                btn.className = "table-btn";
-                btn.innerText = i;
-                btn.onclick = () => selectAndLockTable(i);
+                btn.className = "table-btn"; btn.innerText = i;
+                btn.onclick = () => { sessionStorage.setItem("shabu_table_locked", i); checkTableLock(); };
                 grid.appendChild(btn);
             }
         }
 
-        function selectAndLockTable(tableNum) {
-            sessionStorage.setItem("shabu_table_locked", tableNum);
-            checkTableLock();
-        }
-
-        // Resets the temporary session cache so testing table selection is easy
-        function resetTable() {
-            sessionStorage.removeItem("shabu_table_locked");
-            checkTableLock();
-        }
-
+        function resetTable() { sessionStorage.removeItem("shabu_table_locked"); checkTableLock(); }
         function loadMenu() {
             renderCategory('soup-menu', menuItems.soups);
             renderCategory('meat-menu', menuItems.meats);
@@ -186,60 +132,54 @@
         }
 
         function renderCategory(elementId, items) {
-            const container = document.getElementById(elementId);
-            container.innerHTML = items.map(item => `
+            document.getElementById(elementId).innerHTML = items.map(item => `
                 <div class="menu-item">
                     <h4>${item.name}</h4>
                     <p class="price">${item.price} THB</p>
-                    <button class="add-btn" onclick="addToCart('${item.id}', '${item.name}')">Add to Order</button>
+                    <button class="add-btn" onclick="addToCart('${item.id}', '${item.name}', ${item.price})">Add to Order</button>
                 </div>
             `).join('');
         }
 
-        function addToCart(id, name) {
+        function addToCart(id, name, price) {
             if (cart[id]) { cart[id].qty++; } 
-            else { cart[id] = { name: name, qty: 1 }; }
+            else { cart[id] = { name: name, qty: 1, price: price }; }
             updateCartUI();
         }
 
         function changeQty(id, amount) {
             if (!cart[id]) return;
             cart[id].qty += amount;
-            if (cart[id].qty <= 0) { delete cart[id]; }
+            if (cart[id].qty <= 0) delete cart[id];
             updateCartUI();
         }
 
         function updateCartUI() {
             const container = document.getElementById("cart-items");
-            const btn = document.getElementById("submit-order-btn");
+            const totalDisplay = document.getElementById("cart-total");
             const keys = Object.keys(cart);
-
             if (keys.length === 0) {
                 container.innerHTML = '<p style="color: #888; text-align: center;">Your cart is empty</p>';
-                btn.disabled = true;
-                return;
+                document.getElementById("submit-order-btn").disabled = true;
+                totalDisplay.innerText = "0 THB"; return;
             }
-
-            btn.disabled = false;
-            container.innerHTML = keys.map(key => `
-                <div class="cart-item">
-                    <span>${cart[key].name}</span>
-                    <div class="cart-controls">
-                        <button onclick="changeQty('${key}', -1)">-</button>
-                        <span>${cart[key].qty}</span>
-                        <button onclick="changeQty('${key}', 1)">+</button>
-                    </div>
-                </div>
-            `).join('');
+            document.getElementById("submit-order-btn").disabled = false;
+            let orderTotal = 0;
+            container.innerHTML = keys.map(key => {
+                orderTotal += cart[key].price * cart[key].qty;
+                return `
+                    <div class="cart-item">
+                        <div><span>${cart[key].name}</span><div style="font-size:0.8rem;color:#666;">${cart[key].price} THB each</div></div>
+                        <div class="cart-controls">
+                            <button onclick="changeQty('${key}', -1)">-</button><span>${cart[key].qty}</span><button onclick="changeQty('${key}', 1)">+</button>
+                        </div>
+                    </div>`;
+            }).join('');
+            totalDisplay.innerText = `${orderTotal} THB`;
         }
 
         function sendOrder() {
             const currentTable = sessionStorage.getItem("shabu_table_locked");
-            if (!currentTable) {
-                alert("Security Error: Table token missing!");
-                return;
-            }
-
             fetch('/api/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -248,24 +188,15 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    const consoleBox = document.getElementById("console-box");
-                    const placeholder = consoleBox.querySelector(".console-placeholder");
+                    const placeholder = document.querySelector(".console-placeholder");
                     if (placeholder) placeholder.remove();
-
                     const log = document.createElement("div");
                     log.className = "console-log success";
                     log.innerHTML = `<span class="time">[${new Date().toLocaleTimeString()}]</span> Order processed successfully! Sent to kitchen queue.`;
-                    
-                    consoleBox.appendChild(log);
-                    consoleBox.scrollTop = consoleBox.scrollHeight;
-
-                    cart = {};
-                    updateCartUI();
-                } else {
-                    alert("Failed to submit order.");
-                }
-            })
-            .catch(() => alert("Network error connecting to the kitchen."));
+                    document.getElementById("console-box").appendChild(log);
+                    cart = {}; updateCartUI();
+                } else { alert("Error submitting order."); }
+            }).catch(() => alert("Network error connecting to server."));
         }
     </script>
 </body>

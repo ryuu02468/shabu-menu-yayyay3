@@ -27,10 +27,8 @@
         .ticket-item { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px dotted #eee; font-size: 1.05rem; }
         
         .kitchen-actions { display: flex; gap: 10px; }
-        .serve-btn { background-color: var(--kitchen-color); color: white; border: none; flex: 2; padding: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; }
-        .delay-btn { background-color: var(--warning-color); color: white; border: none; flex: 1; padding: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .serve-btn { background-color: var(--kitchen-color); color: white; border: none; flex: 1; padding: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; }
         .serve-btn:hover { background-color: #21867a; }
-        .delay-btn:hover { background-color: #e76f51; }
 
         .no-orders { grid-column: 1 / -1; text-align: center; padding: 4rem; background: white; border-radius: 8px; color: #888; border: 2px dashed #ccc; }
         @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -40,22 +38,25 @@
 
     <div class="kitchen-header">
         <h2>🧑‍🍳 KITCHEN ORDER DISPLAY MONITOR (ห้องครัว)</h2>
-        <p>Live order flow streaming sync pipeline active</p>
+        <p>Live order flow streaming sync pipeline active (Refreshing every 3s)</p>
     </div>
 
     <div class="kitchen-grid" id="kitchen-grid"></div>
-
     <script>
-        function getKitchenOrders() { return JSON.parse(localStorage.getItem('kitchenOrders')) || []; }
-        function saveKitchenOrders(arr) { localStorage.setItem('kitchenOrders', JSON.stringify(arr)); }
-        function getLogs() { return JSON.parse(localStorage.getItem('notificationLogs')) || []; }
-        function saveLogs(arr) { localStorage.setItem('notificationLogs', JSON.stringify(arr)); }
+        // Fetch active tickets from backend array state pool automatically
+        function fetchKitchenOrders() {
+            fetch('/api/orders')
+                .then(res => res.json())
+                .then(orders => {
+                    renderKitchenGrid(orders);
+                })
+                .catch(err => console.error("Error fetching kitchen orders:", err));
+        }
 
-        function renderKitchenGrid() {
+        function renderKitchenGrid(orders) {
             const grid = document.getElementById('kitchen-grid');
-            const orders = getKitchenOrders();
 
-            if (orders.length === 0) {
+            if (!orders || orders.length === 0) {
                 grid.innerHTML = `
                     <div class="no-orders">
                         <h3>No Active Tickets</h3>
@@ -65,11 +66,12 @@
             }
 
             grid.innerHTML = '';
-            orders.forEach((order, index) => {
-                let itemsHTML = order.items.map(i => `
+            orders.forEach((order) => {
+                // Map the dynamic cart payload object keys into readable item text rows
+                let itemsHTML = Object.keys(order.items).map(key => `
                     <li class="ticket-item">
-                        <span>🔹 ${i.name}</span>
-                        <strong>x${i.qty}</strong>
+                        <span>🔹 ${order.items[key].name}</span>
+                        <strong>x${order.items[key].qty}</strong>
                     </li>`).join('');
 
                 const ticket = document.createElement('div');
@@ -78,73 +80,42 @@
                     <div>
                         <div class="ticket-header">
                             <span class="ticket-table">TABLE ${order.table}</span>
-                            <span class="ticket-time">#${order.orderId} • ${order.time}</span>
+                            <span class="ticket-time">#${order.id.slice(-4)} • ${order.timestamp}</span>
                         </div>
                         <ul class="ticket-items">${itemsHTML}</ul>
                     </div>
                     <div class="kitchen-actions">
-                        <button class="serve-btn" onclick="serveOrder(${index})">✔ Served</button>
-                        <button class="delay-btn" onclick="delayOrder(${index})">⏳ Delay</button>
+                        <button class="serve-btn" onclick="serveOrder('${order.id}')">✔ Served & Clear</button>
                     </div>
                 `;
                 grid.appendChild(ticket);
             });
         }
 
-        function serveOrder(index) {
-            let orders = getKitchenOrders();
-            const order = orders[index];
-
-            // Revoke client cancellation/edit capability
-            let logs = getLogs();
-            let logEntry = logs.find(l => l.orderId === order.orderId);
-            if (logEntry) logEntry.actionable = false;
-
-            // Push completion notice
-            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            logs.unshift({
-                table: order.table,
-                text: `✅ Order #${order.orderId} completed & served! Enjoy your Shabu!`,
-                type: 'success',
-                time: now,
-                orderId: null,
-                actionable: false
-            });
-
-            saveLogs(logs);
-            orders.splice(index, 1);
-            saveKitchenOrders(orders);
-            renderKitchenGrid();
+        // Send a complete package signal to the backend to erase the cleared ticket from the active pool
+        function serveOrder(orderId) {
+            fetch('/api/orders/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId: orderId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Instantly refresh UI locally upon processing approval
+                    fetchKitchenOrders();
+                } else {
+                    alert("Error processing ticket action.");
+                }
+            })
+            .catch(() => alert("Network error trying to contact active pool."));
         }
 
-        function delayOrder(index) {
-            let orders = getKitchenOrders();
-            const order = orders[index];
-            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        // Run the fetch once instantly on load
+        fetchKitchenOrders();
 
-            let logs = getLogs();
-            logs.unshift({
-                table: order.table,
-                text: `⚠️ Notice: Order #${order.orderId} is delayed due to high kitchen volume.`,
-                type: 'warning',
-                time: now,
-                orderId: null,
-                actionable: false
-            });
-
-            saveLogs(logs);
-            renderKitchenGrid();
-        }
-
-        // Auto-refresh layout whenever changes occur on other file pages
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'kitchenOrders') {
-                renderKitchenGrid();
-            }
-        });
-
-        // First initial paint run
-        renderKitchenGrid();
+        // 🔁 AUTO-POLLING INTERVAL LOOP: Fetch fresh active orders every 3 seconds (3000ms)
+        setInterval(fetchKitchenOrders, 3000);
     </script>
 </body>
 </html>

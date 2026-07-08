@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ชาบู Shabu Delight - Customer Portal</title>
+    <style>
+        :root {
+            --primary-color: #e63946;
+            --secondary-color: #1d3557;
+            --danger-color: #d90429;
+            --bg-color: #f1faee;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); }
+        header { background-color: var(--primary-color); color: white; text-align: center; padding: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .container { max-width: 1400px; margin: 2rem auto; padding: 0 1rem; }
+
+        /* Table Selection Screen */
+        #table-screen { text-align: center; background: var(--card-bg); padding: 2rem; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); max-width: 600px; margin: 4rem auto; }
+        .table-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin: 2rem 0; }
+        @media (max-width: 500px) { .table-grid { grid-template-columns: repeat(3, 1fr); } }
+        .table-btn { background-color: white; border: 2px solid var(--secondary-color); color: var(--secondary-color); padding: 15px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; }
+        .table-btn:hover { background-color: var(--secondary-color); color: white; }
+
+        /* Main Menu Layout */
+        .info-bar { background-color: var(--secondary-color); color: white; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .change-table-btn { background: transparent; border: 1px solid white; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .main-layout { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1.5rem; }
+        @media (max-width: 1024px) { .main-layout { grid-template-columns: 1.5fr 1fr; } .notification-panel { grid-column: span 2; } }
+        @media (max-width: 768px) { .main-layout { grid-template-columns: 1fr; } .notification-panel { grid-column: span 1; } }
+
+        .category-title { margin: 1.5rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 2px solid var(--primary-color); color: var(--primary-color); }
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.2rem; }
+        .menu-item { background: var(--card-bg); border-radius: 8px; padding: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
+        .menu-item h4 { margin-bottom: 0.4rem; }
+        .menu-item .price { color: var(--primary-color); font-weight: bold; margin-bottom: 0.8rem; }
+
+        .allergen-box { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 1rem; min-height: 20px; }
+        .allergen-badge { background-color: #fff3cd; color: #856404; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; border: 1px solid #ffeeba; }
+        .add-btn { background-color: var(--primary-color); color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
+        .add-btn:hover { background-color: #c92a36; }
+
+        /* Panels */
+        .cart-panel, .notification-panel { background: var(--card-bg); padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); height: fit-content; position: sticky; top: 20px; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #ddd; }
+        .cart-controls { display: flex; align-items: center; gap: 8px; }
+        .cart-controls button { background: #ddd; border: none; width: 25px; height: 25px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .total-section { margin-top: 1.5rem; padding-top: 1rem; border-top: 2px dashed #ddd; font-size: 1.2rem; font-weight: bold; display: flex; justify-content: space-between; }
+        .order-btn { background-color: #2a9d8f; color: white; border: none; width: 100%; padding: 12px; margin-top: 1rem; border-radius: 5px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+        .order-btn:hover { background-color: #21867a; }
+        .order-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        /* Notification Console */
+        .console-box { background-color: #1e1e1e; color: #f1f1f1; border-radius: 6px; padding: 10px; margin-top: 1rem; max-height: 450px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; }
+        .console-placeholder { color: #777; text-align: center; padding: 1rem; font-style: italic; }
+        .console-log { padding: 8px 4px; border-bottom: 1px solid #333; line-height: 1.3rem; animation: fadeIn 0.3s ease-in; }
+        .console-log .time { color: #888; margin-right: 5px; }
+        .console-log.info { color: #4cc9f0; }
+        .console-log.success { color: #4ade80; font-weight: bold; }
+        .console-log.warning { color: #f4a261; font-weight: bold; }
+        .console-log.danger { color: #f25c54; }
+
+        .log-actions { display: inline-flex; gap: 5px; margin-left: 8px; }
+        .edit-order-btn { background-color: var(--warning-color); color: #111; border: none; padding: 2px 6px; font-size: 0.75rem; font-weight: bold; border-radius: 3px; cursor: pointer; }
+        .cancel-order-btn { background-color: var(--danger-color); color: white; border: none; padding: 2px 6px; font-size: 0.75rem; font-weight: bold; border-radius: 3px; cursor: pointer; }
+        .edit-order-btn:hover { background-color: #e76f51; color: white; }
+        .cancel-order-btn:hover { background-color: #b3001b; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>ชาบู Shabu Delight</h1>
+        <p>Premium Buffet & Customer Ordering Portal</p>
+    </header>
+
+    <div class="container">
+        <div id="table-screen">
+            <h2>Welcome! Please Select Your Table</h2>
+            <p style="color: #666; margin-top: 5px;">Choose your table number to start ordering</p>
+            <div class="table-grid" id="table-grid"></div>
+        </div>
+
+        <div id="menu-screen" style="display: none;">
+            <div class="info-bar">
+                <div>📍 <span id="current-table-display" style="font-weight: bold;"></span></div>
+                <button class="change-table-btn" onclick="resetTable()">Change Table</button>
+            </div>
+
+            <div class="main-layout">
+                <div class="menu-container">
+                    <h3 class="category-title">🍲 Soup Bases (เลือกน้ำซุป)</h3>
+                    <div class="menu-grid" id="soup-menu"></div>
+
+                    <h3 class="category-title">🥩 Meats & Seafood (เนื้อสัตว์และทะเล)</h3>
+                    <div class="menu-grid" id="meat-menu"></div>
+
+                    <h3 class="category-title">🥬 Vegetables & Sides (ผักและเครื่องเคียง)</h3>
+                    <div class="menu-grid" id="veg-menu"></div>
+                </div>
+
+                <div class="cart-panel">
+                    <h3>Your Cart</h3>
+                    <div id="cart-items" style="margin-top: 1rem;">
+                        <p style="color: #888; text-align: center;">Your cart is empty</p>
+                    </div>
+                    <div class="total-section">
+                        <span>Total:</span>
+                        <span id="cart-total">0 THB</span>
+                    </div>
+                    <button class="order-btn" id="submit-order-btn" disabled onclick="sendOrder()">Send Order to Kitchen</button>
+                </div>
+
+                <div class="notification-panel">
+                    <h3>📋 Order Status Feed</h3>
+                    <p style="font-size: 0.85rem; color: #666; margin-top: 4px;">Live updates from the kitchen tab</p>
+                    <div class="console-box" id="customer-console">
+                        <div class="console-placeholder">System active. Awaiting your first order log...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedTable = null;
+        let cart = {};
+        const itemLookupByName = {};
+
+        const menuData = {
+            soup: [
+                { id: 's1', name: 'Mala Soup (น้ำซุปหมาล่า)', price: 50, allergens: ['Soy', 'Gluten', 'Sesame'] },
+                { id: 's2', name: 'Sukiyaki Black Soup (น้ำซุปดำ)', price: 0, allergens: ['Soy', 'Gluten'] },
+                { id: 's3', name: 'Tom Yum Soup (น้ำซุปต้มยำ)', price: 40, allergens: ['Seafood', 'Dairy'] }
+            ],
+            meat: [
+                { id: 'm1', name: 'Wagyu Beef (เนื้อวากิว)', price: 120, allergens: [] },
+                { id: 'm2', name: 'Sliced Pork Belly (หมูสามชั้นสไลด์)', price: 60, allergens: [] },
+                { id: 'm3', name: 'Pork Shoulder (สันคอหมู)', price: 60, allergens: [] },
+                { id: 'm4', name: 'Fresh Shrimp (กุ้งสด)', price: 80, allergens: ['Crustaceans'] },
+                { id: 'm5', name: 'Marinated Minced Pork (หมูนุ่ม)', price: 50, allergens: ['Soy', 'Sesame', 'Egg'] }
+            ],
+            veg: [
+                { id: 'v1', name: 'Chinese Cabbage (ผักกาดขาว)', price: 20, allergens: [] },
+                { id: 'v2', name: 'Eryngii Mushroom (เห็ดออรินจิ)', price: 25, allergens: [] },
+                { id: 'v3', name: 'Cheese Tofu (เต้าหู้ชีส)', price: 40, allergens: ['Dairy', 'Soy', 'Fish'] },
+                { id: 'v4', name: 'Instant Noodles (มาม่า)', price: 15, allergens: ['Gluten'] }
+            ]
+        };
+
+        // Create quick reverse lookup mapping dictionary
+        [...menuData.soup, ...menuData.meat, ...menuData.veg].forEach(item => {
+            itemLookupByName[item.name] = { id: item.id, price: item.price };
+        });
+
+        // Initialize Table Select UI Layout
+        const tableGrid = document.getElementById('table-grid');
+        for (let i = 1; i <= 10; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'table-btn';
+            btn.innerText = `Table ${i}`;
+            btn.onclick = () => selectTable(i);
+            tableGrid.appendChild(btn);
+        }
+
+        function selectTable(tableNum) {
+            selectedTable = tableNum;
+            document.getElementById('current-table-display').innerText = `Table Number: ${tableNum}`;
+            document.getElementById('table-screen').style.display = 'none';
+            document.getElementById('menu-screen').style.display = 'block';
+            setupCategory('soup-menu', menuData.soup);
+            setupCategory('meat-menu', menuData.meat);
+            setupCategory('veg-menu', menuData.veg);
+            updateCartUI();
+            updateConsoleUI();
+        }
+
+        function resetTable() {
+            if(confirm("Switch your active table screen configuration?")) {
+                document.getElementById('table-screen').style.display = 'block';
+                document.getElementById('menu-screen').style.display = 'none';
+            }
+        }
+
+        function setupCategory(elementId, items) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            items.forEach(item => {
+                let allergenHTML = (item.allergens || []).map(a => `<span class="allergen-badge">⚠️ ${a}</span>`).join('');
+                const div = document.createElement('div');
+                div.className = 'menu-item';
+                div.innerHTML = `
+                    <div>
+                        <h4>${item.name}</h4>
+                        <p class="price">${item.price === 0 ? 'Free' : item.price + ' THB'}</p>
+                        <div class="allergen-box">${allergenHTML}</div>
+                    </div>
+                    <button class="add-btn" onclick="addToCart('${item.id}', '${item.name}', ${item.price})">Add to Order</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addToCart(id, name, price) {
+            if (cart[id]) cart[id].qty += 1;
+            else cart[id] = { name, price, qty: 1 };
+            updateCartUI();
+        }
+
+        function changeQty(id, delta) {
+            if (!cart[id]) return;
+            cart[id].qty += delta;
+            if (cart[id].qty <= 0) delete cart[id];
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const container = document.getElementById('cart-items');
+            container.innerHTML = '';
+            let total = 0, count = 0;
+
+            Object.keys(cart).forEach(id => {
+                const item = cart[id];
+                total += item.price * item.qty;
+                count += item.qty;
+                const div = document.createElement('div');
+                div.className = 'cart-item';
+                div.innerHTML = `
+                    <div>
+                        <div><strong>${item.name}</strong></div>
+                        <div style="font-size: 0.85rem; color: #666;">${item.price} THB x ${item.qty}</div>
+                    </div>
+                    <div class="cart-controls"><button onclick="changeQty('${id}', -1)">-</button><span>${item.qty}</span><button onclick="changeQty('${id}', 1)">+</button></div>
+                `;
+                container.appendChild(div);
+            });
+            document.getElementById('cart-total').innerText = `${total} THB`;
+            document.getElementById('submit-order-btn').disabled = (count === 0);
+        }
+
+        // Helper storage fetch routines
+        function getKitchenOrders() { return JSON.parse(localStorage.getItem('kitchenOrders')) || []; }
+        function saveKitchenOrders(arr) { localStorage.setItem('kitchenOrders', JSON.stringify(arr)); }
+        function getLogs() { return JSON.parse(localStorage.getItem('notificationLogs')) || []; }
+        function saveLogs(arr) { localStorage.setItem('notificationLogs', JSON.stringify(arr)); }
+
+        function sendOrder() {
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            let counter = parseInt(localStorage.getItem('orderIdCounter')) || 101;
+            const currentOrderId = counter++;
+            localStorage.setItem('orderIdCounter', counter);
+
+            const orderItems = Object.keys(cart).map(id => ({ name: cart[id].name, qty: cart[id].qty }));
+            const newOrder = { orderId: currentOrderId, table: selectedTable, time: timeStr, items: orderItems };
+
+            let orders = getKitchenOrders();
+            orders.push(newOrder);
+            saveKitchenOrders(orders);
+            
+            pushLog(selectedTable, `📡 Order #${currentOrderId} sent successfully to kitchen.`, 'info', timeStr, currentOrderId, true);
+
+            cart = {};
+            updateCartUI();
+            updateConsoleUI();
+            alert(`🎉 Success! Order #${currentOrderId} pushed to kitchen processing queue.`);
+        }
+
+        function pushLog(tableNum, text, type, time, orderId, actionable) {
+            let logs = getLogs();
+            logs.unshift({ table: tableNum, text, type, time, orderId, actionable });
+            saveLogs(logs);
+        }
+
+        function updateConsoleUI() {
+            const consoleBox = document.getElementById('customer-console');
+            const filtering = getLogs().filter(log => log.table === selectedTable);
+
+            if (filtering.length === 0) {
+                consoleBox.innerHTML = '<div class="console-placeholder">System active. Awaiting your first order log...</div>';
+                return;
+            }
+
+            consoleBox.innerHTML = '';
+            filtering.forEach(log => {
+                const div = document.createElement('div');
+                div.className = `console-log ${log.type}`;
+                let actionHTML = log.actionable ? `
+                    <div class="log-actions">
+                        <button class="edit-order-btn" onclick="editActiveOrder(${log.orderId})">✏️ Edit</button>
+                        <button class="cancel-order-btn" onclick="cancelActiveOrder(${log.orderId})">❌ Cancel</button>
+                    </div>` : '';
+                div.innerHTML = `<span class="time">[${log.time}]</span> ${log.text}${actionHTML}`;
+                consoleBox.appendChild(div);
+            });
+        }
+
+        function editActiveOrder(orderId) {
+            let orders = getKitchenOrders();
+            const idx = orders.findIndex(o => o.orderId === orderId);
+            
+            if (idx === -1) {
+                alert("⚠️ Cannot edit this order: The kitchen is already preparing it!");
+                disableLogAction(orderId);
+                return;
+            }
+
+            if (Object.keys(cart).length > 0 && !confirm("⚠️ Overwrite items currently sitting in your cart?")) return;
+
+            orders[idx].items.forEach(item => {
+                const schema = itemLookupByName[item.name];
+                if (schema) cart[schema.id] = { name: item.name, price: schema.price, qty: item.qty };
+            });
+
+            orders.splice(idx, 1);
+            saveKitchenOrders(orders);
+
+            let logs = getLogs();
+            let targetLog = logs.find(l => l.orderId === orderId);
+            if (targetLog) { targetLog.text = `✏️ Order #${orderId} was recalled and is being modified.`; targetLog.type = 'warning'; targetLog.actionable = false; }
+            saveLogs(logs);
+
+            updateCartUI();
+            updateConsoleUI();
+            alert(`📥 Order #${orderId} loaded back into your cart.`);
+        }
+
+        function cancelActiveOrder(orderId) {
+            let orders = getKitchenOrders();
+            const idx = orders.findIndex(o => o.orderId === orderId);
+            
+            if (idx === -1) {
+                alert("⚠️ Cannot cancel: Kitchen is already working on this order.");
+                disableLogAction(orderId);
+                return;
+            }
+
+            if (!confirm(`❌ Completely cancel Order #${orderId}?`)) return;
+
+            orders.splice(idx, 1);
+            saveKitchenOrders(orders);
+
+            let logs = getLogs();
+            let targetLog = logs.find(l => l.orderId === orderId);
+            if (targetLog) { targetLog.text = `🛑 Order #${orderId} has been cancelled by the customer.`; targetLog.type = 'danger'; targetLog.actionable = false; }
+            saveLogs(logs);
+
+            updateConsoleUI();
+            alert(`🛑 Order #${orderId} successfully cancelled.`);
+        }
+
+        function disableLogAction(orderId) {
+            let logs = getLogs();
+            let targetLog = logs.find(l => l.orderId === orderId);
+            if (targetLog) targetLog.actionable = false;
+            saveLogs(logs);
+            updateConsoleUI();
+        }
+
+        // Listen for storage changes coming back from the kitchen file window
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'notificationLogs' || e.key === 'kitchenOrders') {
+                updateConsoleUI();
+            }
+        });
+    </script>
+</body>
+</html>

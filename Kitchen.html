@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ชาบู Shabu Delight - Kitchen Display Monitor</title>
+    <style>
+        :root {
+            --secondary-color: #1d3557;
+            --kitchen-color: #2a9d8f;
+            --warning-color: #f4a261;
+            --bg-color: #f1faee;
+            --card-bg: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); padding: 2rem; }
+        
+        .kitchen-header { background-color: var(--secondary-color); color: white; padding: 1.5rem; text-align: center; border-radius: 8px; margin-bottom: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .kitchen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+        
+        .ticket { background: white; border-top: 8px solid var(--kitchen-color); border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; animation: scaleUp 0.2s ease-out; }
+        .ticket-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        .ticket-table { background-color: var(--secondary-color); color: white; padding: 5px 12px; border-radius: 4px; font-weight: bold; font-size: 1.2rem; }
+        .ticket-time { font-size: 0.85rem; color: #666; }
+        .ticket-items { list-style: none; margin-bottom: 1.5rem; }
+        .ticket-item { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px dotted #eee; font-size: 1.05rem; }
+        
+        .kitchen-actions { display: flex; gap: 10px; }
+        .serve-btn { background-color: var(--kitchen-color); color: white; border: none; flex: 2; padding: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .delay-btn { background-color: var(--warning-color); color: white; border: none; flex: 1; padding: 10px; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .serve-btn:hover { background-color: #21867a; }
+        .delay-btn:hover { background-color: #e76f51; }
+
+        .no-orders { grid-column: 1 / -1; text-align: center; padding: 4rem; background: white; border-radius: 8px; color: #888; border: 2px dashed #ccc; }
+        @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="kitchen-header">
+        <h2>🧑‍🍳 KITCHEN ORDER DISPLAY MONITOR (ห้องครัว)</h2>
+        <p>Live order flow streaming sync pipeline active</p>
+    </div>
+
+    <div class="kitchen-grid" id="kitchen-grid"></div>
+
+    <script>
+        function getKitchenOrders() { return JSON.parse(localStorage.getItem('kitchenOrders')) || []; }
+        function saveKitchenOrders(arr) { localStorage.setItem('kitchenOrders', JSON.stringify(arr)); }
+        function getLogs() { return JSON.parse(localStorage.getItem('notificationLogs')) || []; }
+        function saveLogs(arr) { localStorage.setItem('notificationLogs', JSON.stringify(arr)); }
+
+        function renderKitchenGrid() {
+            const grid = document.getElementById('kitchen-grid');
+            const orders = getKitchenOrders();
+
+            if (orders.length === 0) {
+                grid.innerHTML = `
+                    <div class="no-orders">
+                        <h3>No Active Tickets</h3>
+                        <p>Waiting for incoming customer transactions...</p>
+                    </div>`;
+                return;
+            }
+
+            grid.innerHTML = '';
+            orders.forEach((order, index) => {
+                let itemsHTML = order.items.map(i => `
+                    <li class="ticket-item">
+                        <span>🔹 ${i.name}</span>
+                        <strong>x${i.qty}</strong>
+                    </li>`).join('');
+
+                const ticket = document.createElement('div');
+                ticket.className = 'ticket';
+                ticket.innerHTML = `
+                    <div>
+                        <div class="ticket-header">
+                            <span class="ticket-table">TABLE ${order.table}</span>
+                            <span class="ticket-time">#${order.orderId} • ${order.time}</span>
+                        </div>
+                        <ul class="ticket-items">${itemsHTML}</ul>
+                    </div>
+                    <div class="kitchen-actions">
+                        <button class="serve-btn" onclick="serveOrder(${index})">✔ Served</button>
+                        <button class="delay-btn" onclick="delayOrder(${index})">⏳ Delay</button>
+                    </div>
+                `;
+                grid.appendChild(ticket);
+            });
+        }
+
+        function serveOrder(index) {
+            let orders = getKitchenOrders();
+            const order = orders[index];
+
+            // Revoke client cancellation/edit capability
+            let logs = getLogs();
+            let logEntry = logs.find(l => l.orderId === order.orderId);
+            if (logEntry) logEntry.actionable = false;
+
+            // Push completion notice
+            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            logs.unshift({
+                table: order.table,
+                text: `✅ Order #${order.orderId} completed & served! Enjoy your Shabu!`,
+                type: 'success',
+                time: now,
+                orderId: null,
+                actionable: false
+            });
+
+            saveLogs(logs);
+            orders.splice(index, 1);
+            saveKitchenOrders(orders);
+            renderKitchenGrid();
+        }
+
+        function delayOrder(index) {
+            let orders = getKitchenOrders();
+            const order = orders[index];
+            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            let logs = getLogs();
+            logs.unshift({
+                table: order.table,
+                text: `⚠️ Notice: Order #${order.orderId} is delayed due to high kitchen volume.`,
+                type: 'warning',
+                time: now,
+                orderId: null,
+                actionable: false
+            });
+
+            saveLogs(logs);
+            renderKitchenGrid();
+        }
+
+        // Auto-refresh layout whenever changes occur on other file pages
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'kitchenOrders') {
+                renderKitchenGrid();
+            }
+        });
+
+        // First initial paint run
+        renderKitchenGrid();
+    </script>
+</body>
+</html>
